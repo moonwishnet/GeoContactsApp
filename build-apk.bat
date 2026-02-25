@@ -26,7 +26,7 @@ call gradlew.bat clean
 
 echo.
 echo [2/2] Building APK (this may take several minutes)...
-call gradlew.bat assembleDebug
+call gradlew.bat assembleRelease
 
 if %errorlevel% == 0 (
     echo.
@@ -35,7 +35,7 @@ if %errorlevel% == 0 (
     echo ========================================
     echo.
     echo APK location:
-    dir /s /b app\build\outputs\apk\debug\*.apk
+    for /r "app\build\outputs\apk\release" %%f in (*.apk) do echo %%f
 ) else (
     echo.
     echo ========================================
