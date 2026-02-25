@@ -24,13 +24,20 @@
         "backgroundColor": "#0f172a"
       },
       "package": "com.geocontacts.plus",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCj5X5w1YEq8vQeJz4bQJZM7JqHn4T4QkM"
+        }
+      },
       "permissions": [
         "android.permission.CALL_PHONE",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.SEND_SMS",
         "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS"
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
