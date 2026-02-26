@@ -1,0 +1,1392 @@
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2">姓名</label>
+                        <input type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="输入姓名">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2">电话</label>
+                        <input type="tel" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="输入电话号码">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2">分类</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="px-3 py-2 rounded-lg bg-blue-600/20 text-blue-400 text-xs border border-blue-500/30">工作</button>
+                            <button class="px-3 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs border border-slate-700">私人</button>
+                            <button class="px-3 py-2 rounded-lg bg-slate-800 text-slate-400 text-xs border border-slate-700">家人</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2">位置</label>
+                        <button class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-left text-slate-400 flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>选择常用位置</span>
+                        </button>
+                    </div>
+                    
+                    <button onclick="saveContact()" class="w-full py-4 rounded-xl bg-blue-600 text-white font-medium mt-6 shadow-lg shadow-blue-600/20">
+                        保存联系人
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOS紧急模态 -->
+        <div id="sosModal" class="absolute inset-0 z-[60] bg-red-950/90 backdrop-blur-md hidden flex items-center justify-center p-6">
+            <div class="w-full max-w-sm text-center">
+                <div class="w-24 h-24 rounded-full bg-red-600/30 border-4 border-red-500 flex items-center justify-center mx-auto mb-6 animate-pulse">
+                    <i class="fas fa-exclamation-triangle text-4xl text-red-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2 text-red-100">紧急模式</h2>
+                <p class="text-red-200/70 mb-8">正在向紧急联系人发送位置并拨打电话...</p>
+                
+                <div class="space-y-3 mb-8">
+                    <div class="bg-red-900/30 rounded-xl p-4 flex items-center gap-3 border border-red-500/30">
+                        <i class="fas fa-location-arrow text-red-400"></i>
+                        <div class="text-left flex-1">
+                            <div class="text-sm font-medium">实时位置共享中</div>
+                            <div class="text-xs text-red-300/70">已共享 0:32</div>
+                        </div>
+                    </div>
+                    <div class="bg-red-900/30 rounded-xl p-4 flex items-center gap-3 border border-red-500/30">
+                        <i class="fas fa-phone-alt text-red-400 animate-pulse"></i>
+                        <div class="text-left flex-1">
+                            <div class="text-sm font-medium">正在呼叫：紧急联系人 (1/2)</div>
+                            <div class="text-xs text-red-300/70">父亲 · 响铃中...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="cancelSOS()" class="w-full py-4 rounded-2xl bg-slate-800 text-white font-bold text-lg border-2 border-slate-600">
+                    取消紧急呼叫
+                </button>
+                <p class="text-xs text-red-300/50 mt-4">3秒后自动拨打110</p>
+            </div>
+        </div>
+
+        <!-- 分类管理器模态 -->
+        <div id="categoryManagerModal" class="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end">
+            <div class="w-full glass-strong rounded-t-3xl p-6 modal-enter max-h-[90vh] overflow-y-auto no-scrollbar">
+                <div class="w-12 h-1 bg-slate-600 rounded-full mx-auto mb-6"></div>
+                
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold">分类管理器</h3>
+                        <p class="text-xs text-slate-400 mt-1">支持多维度交叉分类，一人可在多个分类中</p>
+                    </div>
+                    <button onclick="closeCategoryManager()" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- 维度切换 -->
+                <div class="flex gap-2 mb-6 p-1 bg-slate-800/50 rounded-xl">
+                    <button onclick="showManagerDimension('work')" id="mgr-work" class="mgr-dim-btn flex-1 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white">
+                        工作维度
+                    </button>
+                    <button onclick="showManagerDimension('personal')" id="mgr-personal" class="mgr-dim-btn flex-1 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                        私人维度
+                    </button>
+                    <button onclick="showManagerDimension('custom')" id="mgr-custom" class="mgr-dim-btn flex-1 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                        自定义
+                    </button>
+                </div>
+
+                <!-- 分类树编辑区 -->
+                <div id="managerTree" class="space-y-3 mb-6">
+                    <!-- 动态生成 -->
+                </div>
+
+                <button onclick="addNewCategoryNode()" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-600 text-slate-400 hover:border-blue-500 hover:text-blue-400 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    <span>添加顶级分类</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 添加/编辑分类节点模态 -->
+        <div id="editNodeModal" class="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-6">
+            <div class="w-full max-w-sm glass-strong rounded-2xl p-6 modal-enter">
+                <h3 class="text-lg font-bold mb-4" id="editNodeTitle">添加分类</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-xs text-slate-400 mb-2">分类名称</label>
+                    <input type="text" id="nodeNameInput" placeholder="例如：Alpha项目" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs text-slate-400 mb-2">选择颜色</label>
+                    <div class="flex gap-3">
+                        <button onclick="selectNodeColor('blue')" class="color-select w-10 h-10 rounded-full bg-blue-500 ring-2 ring-offset-2 ring-offset-slate-800 ring-blue-500"></button>
+                        <button onclick="selectNodeColor('green')" class="color-select w-10 h-10 rounded-full bg-green-500 ring-2 ring-offset-2 ring-offset-slate-800 ring-transparent hover:ring-green-500"></button>
+                        <button onclick="selectNodeColor('purple')" class="color-select w-10 h-10 rounded-full bg-purple-500 ring-2 ring-offset-2 ring-offset-slate-800 ring-transparent hover:ring-purple-500"></button>
+                        <button onclick="selectNodeColor('orange')" class="color-select w-10 h-10 rounded-full bg-orange-500 ring-2 ring-offset-2 ring-offset-slate-800 ring-transparent hover:ring-orange-500"></button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closeEditNodeModal()" class="flex-1 py-3 rounded-xl border border-slate-600 text-slate-300 font-medium hover:bg-slate-800">取消</button>
+                    <button onclick="saveNode()" class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/20">保存</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        // ==================== 数据定义 ====================
+        
+        // 多维度分类数据结构
+        const categoryDimensions = {
+            work: {
+                label: '工作',
+                color: 'blue',
+                icon: 'briefcase',
+                tree: [
+                    {
+                        id: 'w1',
+                        name: '进行中项目',
+                        color: 'blue',
+                        children: [
+                            { id: 'w1-1', name: 'Alpha项目', color: 'blue', children: [] },
+                            { id: 'w1-2', name: 'Beta平台', color: 'blue', children: [] },
+                            { id: 'w1-3', name: 'Gamma系统', color: 'blue', children: [] }
+                        ]
+                    },
+                    {
+                        id: 'w2',
+                        name: '组织架构',
+                        color: 'purple',
+                        children: [
+                            { id: 'w2-1', name: '技术委员会', color: 'purple', children: [] },
+                            { id: 'w2-2', name: '产品组', color: 'purple', children: [] },
+                            { id: 'w2-3', name: '市场部', color: 'purple', children: [] }
+                        ]
+                    },
+                    {
+                        id: 'w3',
+                        name: '外部关系',
+                        color: 'orange',
+                        children: [
+                            { id: 'w3-1', name: '核心客户', color: 'orange', children: [] },
+                            { id: 'w3-2', name: '供应商', color: 'orange', children: [] },
+                            { id: 'w3-3', name: '合作伙伴', color: 'orange', children: [] }
+                        ]
+                    }
+                ]
+            },
+            personal: {
+                label: '私人',
+                color: 'green',
+                icon: 'user-friends',
+                tree: [
+                    {
+                        id: 'p1',
+                        name: '同学',
+                        color: 'green',
+                        children: [
+                            { id: 'p1-1', name: '小学同学', color: 'green', children: [] },
+                            { id: 'p1-2', name: '初中同学', color: 'green', children: [] },
+                            { id: 'p1-3', name: '高中同学', color: 'green', children: [] },
+                            { id: 'p1-4', name: '大学同学', color: 'green', children: [] }
+                        ]
+                    },
+                    {
+                        id: 'p2',
+                        name: '活动圈子',
+                        color: 'pink',
+                        children: [
+                            { id: 'p2-1', name: 'KK郊游群', color: 'pink', children: [] },
+                            { id: 'p2-2', name: '读书会', color: 'pink', children: [] },
+                            { id: 'p2-3', name: '羽毛球俱乐部', color: 'pink', children: [] }
+                        ]
+                    },
+                    {
+                        id: 'p3',
+                        name: '亲友',
+                        color: 'red',
+                        children: [
+                            { id: 'p3-1', name: '直系亲属', color: 'red', children: [] },
+                            { id: 'p3-2', name: '旁系亲属', color: 'red', children: [] },
+                            { id: 'p3-3', name: '密友', color: 'red', children: [] }
+                        ]
+                    }
+                ]
+            },
+            custom: {
+                label: '自定义',
+                color: 'slate',
+                icon: 'tags',
+                tree: []
+            }
+        };
+
+        // 联系人数据（支持多分类标签，增加最近联系时间）
+        let contacts = [
+            {
+                id: 1,
+                name: "张三",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zhang",
+                distance: 0.8,
+                distanceUnit: "km",
+                relationship: 5,
+                status: "online",
+                location: "中关村软件园",
+                locationType: "company",
+                phone: "138-0000-0001",
+                isFavorite: true,
+                context: "工作时间可联系",
+                bestTime: "18:30后",
+                lastContact: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
+                categories: [
+                    { dim: 'work', path: ['进行中项目', 'Alpha项目'], nodeId: 'w1-1' },
+                    { dim: 'work', path: ['组织架构', '技术委员会'], nodeId: 'w2-1' }
+                ],
+                tags: ['技术总监', '后端专家']
+            },
+            {
+                id: 2,
+                name: "李四",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Li",
+                distance: 2.5,
+                distanceUnit: "km",
+                relationship: 4,
+                status: "busy",
+                location: "家中",
+                locationType: "home",
+                phone: "139-0000-0002",
+                isFavorite: true,
+                context: "周末休息",
+                bestTime: "随时",
+                lastContact: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1天前
+                categories: [
+                    { dim: 'personal', path: ['同学', '大学同学'], nodeId: 'p1-4' },
+                    { dim: 'personal', path: ['活动圈子', '读书会'], nodeId: 'p2-2' }
+                ],
+                tags: ['室友', '文学爱好者']
+            },
+            {
+                id: 3,
+                name: "王五",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Wang",
+                distance: 0.5,
+                distanceUnit: "km",
+                relationship: 3,
+                status: "online",
+                location: "万达广场",
+                locationType: "meeting",
+                phone: "137-0000-0003",
+                isFavorite: false,
+                context: "午餐时间有空",
+                bestTime: "12:00-13:00",
+                lastContact: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4小时前
+                categories: [
+                    { dim: 'work', path: ['外部关系', '核心客户'], nodeId: 'w3-1' },
+                    { dim: 'personal', path: ['活动圈子', '羽毛球俱乐部'], nodeId: 'p2-3' }
+                ],
+                tags: ['客户代表', '运动达人']
+            },
+            {
+                id: 4,
+                name: "赵六",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zhao",
+                distance: 5.2,
+                distanceUnit: "km",
+                relationship: 2,
+                status: "offline",
+                location: "首都机场",
+                locationType: "travel",
+                phone: "136-0000-0004",
+                isFavorite: false,
+                context: "出差中",
+                bestTime: "不建议打扰",
+                lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7天前
+                categories: [
+                    { dim: 'work', path: ['进行中项目', 'Gamma系统'], nodeId: 'w1-3' }
+                ],
+                tags: ['项目经理']
+            },
+            {
+                id: 5,
+                name: "陈小明",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chen",
+                distance: 1.2,
+                distanceUnit: "km",
+                relationship: 4,
+                status: "online",
+                location: "朝阳公园",
+                locationType: "leisure",
+                phone: "135-0000-0005",
+                isFavorite: true,
+                context: "正在打球",
+                bestTime: "17:00后",
+                lastContact: new Date(Date.now() - 30 * 60 * 1000), // 30分钟前
+                categories: [
+                    { dim: 'personal', path: ['同学', '高中同学'], nodeId: 'p1-3' },
+                    { dim: 'personal', path: ['活动圈子', '羽毛球俱乐部'], nodeId: 'p2-3' },
+                    { dim: 'work', path: ['组织架构', '产品组'], nodeId: 'w2-2' }
+                ],
+                tags: ['班长', '产品经理']
+            },
+            {
+                id: 6,
+                name: "刘大伟",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Liu",
+                distance: 3.0,
+                distanceUnit: "km",
+                relationship: 3,
+                status: "online",
+                location: "国贸三期",
+                locationType: "company",
+                phone: "133-0000-0006",
+                isFavorite: false,
+                context: "会议中",
+                bestTime: "19:00后",
+                lastContact: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1小时前
+                categories: [
+                    { dim: 'work', path: ['进行中项目', 'Alpha项目'], nodeId: 'w1-1' },
+                    { dim: 'work', path: ['进行中项目', 'Beta平台'], nodeId: 'w1-2' }
+                ],
+                tags: ['全栈工程师']
+            },
+            {
+                id: 7,
+                name: "林小红",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lin",
+                distance: 0.3,
+                distanceUnit: "km",
+                relationship: 4,
+                status: "busy",
+                location: "星巴克",
+                locationType: "cafe",
+                phone: "130-0000-0007",
+                isFavorite: true,
+                context: "喝咖啡",
+                bestTime: "14:00后",
+                lastContact: new Date(Date.now() - 15 * 60 * 1000), // 15分钟前
+                categories: [
+                    { dim: 'personal', path: ['同学', '初中同学'], nodeId: 'p1-2' },
+                    { dim: 'personal', path: ['活动圈子', 'KK郊游群'], nodeId: 'p2-1' }
+                ],
+                tags: ['同桌', '摄影师']
+            },
+            {
+                id: 8,
+                name: "周总",
+                avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Zhou",
+                distance: 12.0,
+                distanceUnit: "km",
+                relationship: 5,
+                status: "online",
+                location: "总部大楼",
+                locationType: "company",
+                phone: "138-8888-8888",
+                isFavorite: true,
+                context: "重要客户",
+                bestTime: "提前预约",
+                lastContact: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3天前
+                categories: [
+                    { dim: 'work', path: ['外部关系', '核心客户'], nodeId: 'w3-1' },
+                    { dim: 'work', path: ['组织架构', '技术委员会'], nodeId: 'w2-1' }
+                ],
+                tags: ['CTO', '决策人']
+            }
+        ];
+
+        // 设置状态
+        const settings = {
+            location: true,
+            stealth: false,
+            ai: true,
+            dark: true
+        };
+
+        // 全局状态
+        let currentMapDimension = 'all';
+        let currentMapFilter = null;
+        let currentTab = 'map';
+        let currentCatFilter = null;
+        let selectedNodeColor = 'blue';
+        let editingNodeId = null;
+        let currentManagerDimension = 'work';
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderMapContacts();
+            
+            // 显示智能提示
+            setTimeout(() => {
+                document.getElementById('smartTip').classList.remove('hidden');
+            }, 3000);
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+        }
+
+        // ==================== 获取有联系人的分类 ====================
+        function getCategoriesWithContacts(dim) {
+            const result = [];
+            const dimData = categoryDimensions[dim];
+            if (!dimData) return result;
+            
+            function checkNode(node, parentPath = []) {
+                const count = getContactCountByNode(dim, node.id);
+                if (count > 0) {
+                    result.push({
+                        id: node.id,
+                        name: node.name,
+                        color: node.color,
+                        count: count,
+                        path: [...parentPath, node.name]
+                    });
+                }
+                if (node.children) {
+                    node.children.forEach(child => checkNode(child, [...parentPath, node.name]));
+                }
+            }
+            
+            dimData.tree.forEach(node => checkNode(node));
+            return result;
+        }
+
+        function getContactCountByNode(dim, nodeId) {
+            return contacts.filter(c => 
+                c.categories.some(cat => cat.dim === dim && cat.nodeId === nodeId)
+            ).length;
+        }
+
+        function getContactsInNode(dim, nodeId) {
+            return contacts.filter(c => 
+                c.categories.some(cat => cat.dim === dim && cat.nodeId === nodeId)
+            );
+        }
+
+        // ==================== 主标签切换 ====================
+        function switchMainTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                item.classList.add('text-slate-400');
+            });
+            
+            const activeNav = document.getElementById(`nav-${tab}`);
+            if(activeNav) {
+                activeNav.classList.add('active');
+                activeNav.classList.remove('text-slate-400');
+            }
+            
+            document.getElementById('mapView').classList.add('hidden');
+            document.getElementById('categoryView').classList.add('hidden');
+            document.getElementById('timelineView').classList.add('hidden');
+            document.getElementById('profileView').classList.add('hidden');
+            
+            if(tab === 'map') {
+                document.getElementById('mapView').classList.remove('hidden');
+                renderMapContacts();
+            } else if(tab === 'category') {
+                document.getElementById('categoryView').classList.remove('hidden');
+                renderCategoryView();
+            } else if(tab === 'timeline') {
+                document.getElementById('timelineView').classList.remove('hidden');
+            } else if(tab === 'profile') {
+                document.getElementById('profileView').classList.remove('hidden');
+            }
+        }
+
+        // ==================== 地图视图功能 ====================
+        function switchMapDimension(dim) {
+            currentMapDimension = dim;
+            currentMapFilter = null;
+            
+            // 更新标签样式
+            document.querySelectorAll('#mapView .dimension-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.classList.add('text-slate-400');
+            });
+            const activeTab = document.getElementById(`map-dim-${dim}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+                activeTab.classList.remove('text-slate-400');
+            }
+            
+            // 更新视图标题和子分类
+            if (dim === 'all') {
+                document.getElementById('mapViewTitle').textContent = '全部联系人';
+                document.getElementById('mapViewSubtitle').textContent = '按最近联系排序';
+                document.getElementById('subCategoryContainer').classList.add('hidden');
+                document.getElementById('currentFilterPath').classList.add('hidden');
+            } else if (dim === 'nearby') {
+                document.getElementById('mapViewTitle').textContent = '附近的人';
+                document.getElementById('mapViewSubtitle').textContent = '按距离排序 · 1公里范围内';
+                document.getElementById('subCategoryContainer').classList.add('hidden');
+                document.getElementById('currentFilterPath').classList.add('hidden');
+            } else {
+                // 工作/私人维度
+                document.getElementById('mapViewTitle').textContent = categoryDimensions[dim].label + '联系人';
+                document.getElementById('mapViewSubtitle').textContent = '按最近联系排序 · 点击分类筛选';
+                renderSubCategoryTags(dim);
+                document.getElementById('subCategoryContainer').classList.remove('hidden');
+                document.getElementById('currentFilterPath').classList.add('hidden');
+            }
+            
+            renderMapContacts();
+        }
+
+        function renderSubCategoryTags(dim) {
+            const container = document.getElementById('subCategoryTags');
+            const catsWithContacts = getCategoriesWithContacts(dim);
+            
+            container.innerHTML = `
+                <button onclick="filterMapByCategory(null)" id="subcat-all" class="subcategory-tag active">全部</button>
+            ` + catsWithContacts.map(cat => `
+                <button onclick="filterMapByCategory('${cat.id}', '${cat.name}')" id="subcat-${cat.id}" class="subcategory-tag">${cat.name} (${cat.count})</button>
+            `).join('');
+        }
+
+        function filterMapByCategory(nodeId, nodeName) {
+            currentMapFilter = nodeId;
+            
+            document.querySelectorAll('#subCategoryTags .subcategory-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            
+            if (nodeId) {
+                document.getElementById(`subcat-${nodeId}`).classList.add('active');
+                document.getElementById('currentFilterPath').classList.remove('hidden');
+                document.getElementById('filterPathText').textContent = `${categoryDimensions[currentMapDimension].label} / ${nodeName}`;
+            } else {
+                document.getElementById('subcat-all').classList.add('active');
+                document.getElementById('currentFilterPath').classList.add('hidden');
+            }
+            
+            renderMapContacts();
+        }
+
+        function clearFilter() {
+            currentMapFilter = null;
+            document.getElementById('currentFilterPath').classList.add('hidden');
+            document.querySelectorAll('#subCategoryTags .subcategory-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            document.getElementById('subcat-all').classList.add('active');
+            renderMapContacts();
+        }
+
+        function renderMapContacts() {
+            const container = document.getElementById('mapContactList');
+            container.innerHTML = '';
+            
+            let filtered = contacts;
+            
+            if (currentMapDimension === 'all') {
+                // 全部：按最近联系排序
+                filtered = [...contacts].sort((a, b) => b.lastContact - a.lastContact);
+            } else if (currentMapDimension === 'nearby') {
+                // 附近：按距离排序
+                filtered = contacts.filter(c => c.distance <= 1).sort((a, b) => a.distance - b.distance);
+            } else if (currentMapDimension === 'work' || currentMapDimension === 'personal') {
+                // 工作/私人：先筛选该维度联系人，再按最近联系排序
+                filtered = contacts.filter(c => 
+                    c.categories.some(cat => cat.dim === currentMapDimension)
+                );
+                
+                if (currentMapFilter) {
+                    filtered = filtered.filter(c => 
+                        c.categories.some(cat => cat.dim === currentMapDimension && cat.nodeId === currentMapFilter)
+                    );
+                }
+                
+                filtered.sort((a, b) => b.lastContact - a.lastContact);
+            }
+            
+            if (filtered.length === 0) {
+                document.getElementById('mapEmptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('mapEmptyState').classList.add('hidden');
+            }
+            
+            filtered.forEach(contact => {
+                const card = createContactCard(contact);
+                container.appendChild(card);
+            });
+        }
+
+        function createContactCard(contact) {
+            const div = document.createElement('div');
+            div.className = 'contact-card glass rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-slate-800/50';
+            div.onclick = () => showContactDetail(contact);
+            
+            const stars = '★'.repeat(contact.relationship) + '☆'.repeat(5 - contact.relationship);
+            const statusColor = contact.status === 'online' ? 'status-online' : contact.status === 'busy' ? 'status-busy' : 'status-offline';
+            
+            // 格式化最近联系时间
+            const lastContactText = formatLastContact(contact.lastContact);
+            const isRecent = (Date.now() - contact.lastContact.getTime()) < 24 * 60 * 60 * 1000;
+            
+            div.innerHTML = `
+                <div class="relative">
+                    <img src="${contact.avatar}" class="w-12 h-12 rounded-full bg-slate-700 object-cover">
+                    <div class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ${statusColor} status-dot border-2 border-slate-800"></div>
+                    ${contact.isFavorite ? '<div class="absolute -top-1 -right-1 text-yellow-400 text-xs"><i class="fas fa-star"></i></div>' : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="font-semibold text-sm truncate">${contact.name}</span>
+                        <span class="text-[10px] star-rating tracking-tighter">${stars}</span>
+                    </div>
+                    <div class="text-xs text-slate-400 flex items-center gap-1 truncate">
+                        <i class="fas fa-map-marker-alt text-blue-400"></i>
+                        ${contact.location}
+                        <span class="mx-1">·</span>
+                        <span class="text-blue-300">${contact.context}</span>
+                    </div>
+                    <div class="last-contact-tag ${isRecent ? 'recent' : ''} mt-1">
+                        <i class="fas fa-clock mr-1"></i>${lastContactText}
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                    <span class="distance-badge text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                        ${contact.distance}${contact.distanceUnit}
+                    </span>
+                    <div class="flex gap-1">
+                        <button onclick="event.stopPropagation(); quickCall('${contact.phone}')" class="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
+                            <i class="fas fa-phone text-xs"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); navigateTo('${contact.name}')" class="w-7 h-7 rounded-full bg-green-600/20 text-green-400 flex items-center justify-center hover:bg-green-600 hover:text-white transition-colors">
+                            <i class="fas fa-location-arrow text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function formatLastContact(date) {
+            const now = new Date();
+            const diff = now - date;
+            
+            const minutes = Math.floor(diff / (1000 * 60));
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (minutes < 60) {
+                return `${minutes}分钟前联系`;
+            } else if (hours < 24) {
+                return `${hours}小时前联系`;
+            } else if (days < 7) {
+                return `${days}天前联系`;
+            } else {
+                return `${Math.floor(days / 7)}周前联系`;
+            }
+        }
+
+        function toggleSortMode() {
+            showToast('切换排序方式');
+        }
+
+        // ==================== 分类视图功能 ====================
+        function renderCategoryView() {
+            const container = document.getElementById('categoryScrollTabs');
+            
+            // 获取所有有联系人的分类（跨维度）
+            const allCategories = [];
+            
+            ['work', 'personal'].forEach(dim => {
+                const cats = getCategoriesWithContacts(dim);
+                cats.forEach(cat => {
+                    allCategories.push({
+                        ...cat,
+                        dim: dim,
+                        dimLabel: categoryDimensions[dim].label
+                    });
+                });
+            });
+            
+            if (allCategories.length === 0) {
+                container.innerHTML = '<span class="text-xs text-slate-500">暂无分类</span>';
+                renderCatContacts([]);
+                return;
+            }
+            
+            container.innerHTML = `
+                <button onclick="filterCatByNode(null)" id="cat-scroll-all" class="subcategory-tag active">全部</button>
+            ` + allCategories.map(cat => `
+                <button onclick="filterCatByNode('${cat.id}', '${cat.name}', '${cat.dim}')" id="cat-scroll-${cat.id}" class="subcategory-tag">${cat.dimLabel}/${cat.name}</button>
+            `).join('');
+            
+            renderCatContacts(contacts);
+        }
+
+        function filterCatByNode(nodeId, nodeName, dim) {
+            currentCatFilter = nodeId ? { nodeId, dim } : null;
+            
+            document.querySelectorAll('#categoryScrollTabs .subcategory-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            
+            if (nodeId) {
+                document.getElementById(`cat-scroll-${nodeId}`).classList.add('active');
+                document.getElementById('catFilterPath').classList.remove('hidden');
+                document.getElementById('catFilterText').textContent = `${categoryDimensions[dim].label}/${nodeName}`;
+                
+                const filtered = contacts.filter(c => 
+                    c.categories.some(cat => cat.dim === dim && cat.nodeId === nodeId)
+                );
+                renderCatContacts(filtered);
+            } else {
+                document.getElementById('cat-scroll-all').classList.add('active');
+                document.getElementById('catFilterPath').classList.add('hidden');
+                renderCatContacts(contacts);
+            }
+        }
+
+        function clearCatFilter() {
+            currentCatFilter = null;
+            document.getElementById('catFilterPath').classList.add('hidden');
+            document.querySelectorAll('#categoryScrollTabs .subcategory-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            document.getElementById('cat-scroll-all').classList.add('active');
+            renderCatContacts(contacts);
+        }
+
+        function renderCatContacts(contactList) {
+            const container = document.getElementById('catContactList');
+            container.innerHTML = '';
+            
+            if (contactList.length === 0) {
+                document.getElementById('catEmptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('catEmptyState').classList.add('hidden');
+            }
+            
+            // 按最近联系排序
+            const sorted = [...contactList].sort((a, b) => b.lastContact - a.lastContact);
+            
+            sorted.forEach(contact => {
+                const card = createContactCard(contact);
+                container.appendChild(card);
+            });
+        }
+
+        // ==================== 分类管理器 ====================
+        function showCategoryManagerFromProfile() {
+            document.getElementById('categoryManagerModal').classList.remove('hidden');
+            renderManagerTree();
+        }
+
+        function closeCategoryManager() {
+            document.getElementById('categoryManagerModal').classList.add('hidden');
+        }
+
+        function showManagerDimension(dim) {
+            currentManagerDimension = dim;
+            
+            document.querySelectorAll('.mgr-dim-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`mgr-${dim}`).classList.add('bg-blue-600', 'text-white');
+            document.getElementById(`mgr-${dim}`).classList.remove('text-slate-400');
+            
+            renderManagerTree();
+        }
+
+        function renderManagerTree() {
+            const container = document.getElementById('managerTree');
+            const dimData = categoryDimensions[currentManagerDimension];
+            
+            container.innerHTML = renderManagerTreeNodes(dimData.tree, 0);
+        }
+
+        function renderManagerTreeNodes(nodes, depth) {
+            if (!nodes || nodes.length === 0) {
+                return '<div class="text-center text-slate-500 text-sm py-4">暂无分类，点击下方添加</div>';
+            }
+            
+            return nodes.map(node => {
+                const contactsInNode = getContactCountByNode(currentManagerDimension, node.id);
+                const hasChildren = node.children && node.children.length > 0;
+                
+                return `
+                    <div class="tree-node mb-2" style="margin-left: ${depth * 20}px">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                            <div class="flex items-center gap-3 flex-1">
+                                <div class="w-8 h-8 rounded-full bg-${node.color}-500/20 flex items-center justify-center">
+                                    <i class="fas fa-folder text-${node.color}-400 text-xs"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="text-sm font-medium">${node.name}</span>
+                                    <span class="text-xs text-slate-500 ml-2">${contactsInNode}人</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="editCategoryNode('${node.id}')" class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-600">
+                                    <i class="fas fa-pencil-alt text-xs"></i>
+                                </button>
+                                <button onclick="deleteCategoryNode('${node.id}')" class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/20">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                                <button onclick="addChildNode('${node.id}')" class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center text-blue-400 hover:bg-blue-600 hover:text-white">
+                                    <i class="fas fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        ${hasChildren ? `
+                            <div class="mt-2">
+                                ${renderManagerTreeNodes(node.children, depth + 1)}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addNewCategoryNode() {
+            editingNodeId = null;
+            window.parentNodeId = null;
+            document.getElementById('editNodeTitle').textContent = '添加顶级分类';
+            document.getElementById('nodeNameInput').value = '';
+            selectedNodeColor = 'blue';
+            updateColorSelection();
+            document.getElementById('editNodeModal').classList.remove('hidden');
+        }
+
+        function addChildNode(parentId) {
+            editingNodeId = null;
+            window.parentNodeId = parentId;
+            document.getElementById('editNodeTitle').textContent = '添加子分类';
+            document.getElementById('nodeNameInput').value = '';
+            selectedNodeColor = 'blue';
+            updateColorSelection();
+            document.getElementById('editNodeModal').classList.remove('hidden');
+        }
+
+        function editCategoryNode(nodeId) {
+            editingNodeId = nodeId;
+            
+            const findNode = (nodes) => {
+                for (const node of nodes) {
+                    if (node.id === nodeId) return node;
+                    if (node.children) {
+                        const found = findNode(node.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+            
+            const node = findNode(categoryDimensions[currentManagerDimension].tree);
+            if (node) {
+                document.getElementById('editNodeTitle').textContent = '编辑分类';
+                document.getElementById('nodeNameInput').value = node.name;
+                selectedNodeColor = node.color;
+                updateColorSelection();
+                document.getElementById('editNodeModal').classList.remove('hidden');
+            }
+        }
+
+        function deleteCategoryNode(nodeId) {
+            if (confirm('确定要删除此分类吗？该分类下的联系人将被移出此分类。')) {
+                const removeNode = (nodes) => {
+                    const index = nodes.findIndex(n => n.id === nodeId);
+                    if (index !== -1) {
+                        nodes.splice(index, 1);
+                        return true;
+                    }
+                    for (const node of nodes) {
+                        if (node.children && removeNode(node.children)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+                
+                removeNode(categoryDimensions[currentManagerDimension].tree);
+                
+                contacts.forEach(contact => {
+                    contact.categories = contact.categories.filter(cat => 
+                        !(cat.dim === currentManagerDimension && cat.nodeId === nodeId)
+                    );
+                });
+                
+                renderManagerTree();
+                renderMapContacts();
+                showToast('分类已删除');
+            }
+        }
+
+        function selectNodeColor(color) {
+            selectedNodeColor = color;
+            updateColorSelection();
+        }
+
+        function updateColorSelection() {
+            document.querySelectorAll('.color-select').forEach(btn => {
+                btn.classList.remove('ring-blue-500', 'ring-green-500', 'ring-purple-500', 'ring-orange-500');
+                btn.classList.add('ring-transparent');
+            });
+            
+            const colorMap = { 'blue': 0, 'green': 1, 'purple': 2, 'orange': 3 };
+            const buttons = document.querySelectorAll('.color-select');
+            if (buttons[colorMap[selectedNodeColor]]) {
+                buttons[colorMap[selectedNodeColor]].classList.remove('ring-transparent');
+                buttons[colorMap[selectedNodeColor]].classList.add(`ring-${selectedNodeColor}-500`);
+            }
+        }
+
+        function saveNode() {
+            const name = document.getElementById('nodeNameInput').value.trim();
+            if (!name) {
+                showToast('请输入分类名称');
+                return;
+            }
+            
+            if (editingNodeId) {
+                const findAndUpdate = (nodes) => {
+                    for (const node of nodes) {
+                        if (node.id === editingNodeId) {
+                            node.name = name;
+                            node.color = selectedNodeColor;
+                            return true;
+                        }
+                        if (node.children && findAndUpdate(node.children)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+                
+                findAndUpdate(categoryDimensions[currentManagerDimension].tree);
+                showToast('分类已更新');
+            } else {
+                const newId = `${currentManagerDimension}-${Date.now()}`;
+                const newNode = {
+                    id: newId,
+                    name: name,
+                    color: selectedNodeColor,
+                    children: []
+                };
+                
+                if (window.parentNodeId) {
+                    const findAndAdd = (nodes) => {
+                        for (const node of nodes) {
+                            if (node.id === window.parentNodeId) {
+                                if (!node.children) node.children = [];
+                                node.children.push(newNode);
+                                return true;
+                            }
+                            if (node.children && findAndAdd(node.children)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+                    
+                    findAndAdd(categoryDimensions[currentManagerDimension].tree);
+                    window.parentNodeId = null;
+                } else {
+                    categoryDimensions[currentManagerDimension].tree.push(newNode);
+                }
+                
+                showToast('分类已添加');
+            }
+            
+            closeEditNodeModal();
+            renderManagerTree();
+        }
+
+        function closeEditNodeModal() {
+            document.getElementById('editNodeModal').classList.add('hidden');
+            editingNodeId = null;
+            window.parentNodeId = null;
+        }
+
+        // ==================== 联系人详情 ====================
+        function showContactDetail(contact) {
+            const modal = document.getElementById('contactDetailModal');
+            const stars = '★'.repeat(contact.relationship) + '☆'.repeat(5 - contact.relationship);
+            const lastContactText = formatLastContact(contact.lastContact);
+            
+            const categoryTags = contact.categories.map(cat => {
+                const dimLabel = categoryDimensions[cat.dim]?.label || cat.dim;
+                const nodeName = cat.path[cat.path.length - 1];
+                return `<span class="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-xs border border-blue-500/30">${dimLabel}/${nodeName}</span>`;
+            }).join('');
+            
+            modal.innerHTML = `
+                <div class="min-h-full pb-20">
+                    <div class="h-48 bg-gradient-to-b from-blue-600/20 to-slate-900 relative">
+                        <button onclick="closeContactDetail()" class="absolute top-12 left-4 w-10 h-10 rounded-full glass flex items-center justify-center z-10">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="absolute top-12 right-4 w-10 h-10 rounded-full glass flex items-center justify-center z-10">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        
+                        <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+                            <div class="relative">
+                                <img src="${contact.avatar}" class="w-24 h-24 rounded-full border-4 border-slate-900 bg-slate-800">
+                                <div class="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center">
+                                    <i class="fas fa-check text-[10px]"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-14 text-center px-6">
+                        <h2 class="text-2xl font-bold mb-1">${contact.name}</h2>
+                        <div class="flex items-center justify-center gap-2 text-sm text-slate-400 mb-2">
+                            <span class="star-rating">${stars}</span>
+                            <span>·</span>
+                            <span>${contact.relationship >= 4 ? '亲密好友' : contact.relationship >= 3 ? '好友' : '熟人'}</span>
+                        </div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20">
+                            <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            ${contact.context}
+                        </div>
+                        <div class="text-xs text-slate-500 mt-2">
+                            <i class="fas fa-clock mr-1"></i>${lastContactText}
+                        </div>
+                        
+                        <div class="flex flex-wrap justify-center gap-2 mt-3">
+                            ${categoryTags}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-3 px-6 mt-6">
+                        <button onclick="quickCall('${contact.phone}')" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-800 hover:bg-blue-600/20 transition-colors group">
+                            <div class="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <span class="text-xs">拨打电话</span>
+                        </button>
+                        <button onclick="showToast('导航功能')" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-800 hover:bg-green-600/20 transition-colors group">
+                            <div class="w-10 h-10 rounded-full bg-green-600/20 text-green-400 flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-location-arrow"></i>
+                            </div>
+                            <span class="text-xs">导航前往</span>
+                        </button>
+                        <button onclick="showToast('位置共享已发送')" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-800 hover:bg-purple-600/20 transition-colors group">
+                            <div class="w-10 h-10 rounded-full bg-purple-600/20 text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <span class="text-xs">共享位置</span>
+                        </button>
+                        <button onclick="showToast('提醒设置成功')" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-800 hover:bg-yellow-600/20 transition-colors group">
+                            <div class="w-10 h-10 rounded-full bg-yellow-600/20 text-yellow-400 flex items-center justify-center group-hover:bg-yellow-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <span class="text-xs">设置提醒</span>
+                        </button>
+                    </div>
+
+                    <div class="px-6 mt-6">
+                        <h3 class="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fas fa-map-marked-alt"></i> 地址信息
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="glass rounded-xl p-4 border-l-4 border-blue-500">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                        <i class="fas fa-building text-blue-400 text-xs"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-medium text-sm">公司地址</span>
+                                            <span class="text-xs text-blue-400">主要</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 mb-2">北京市海淀区中关村软件园二期 ${contact.location}</p>
+                                        <div class="flex gap-2">
+                                            <span class="text-[10px] px-2 py-1 rounded bg-slate-700 text-slate-300">
+                                                <i class="fas fa-clock mr-1"></i>9:00-18:00
+                                            </span>
+                                            <span class="text-[10px] px-2 py-1 rounded bg-slate-700 text-slate-300">
+                                                <i class="fas fa-parking mr-1"></i>地下B2
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 mt-6">
+                        <h3 class="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                            <i class="fas fa-robot"></i> AI 智能建议
+                        </h3>
+                        <div class="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-xl p-4 border border-blue-500/20">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-500/30 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-lightbulb text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm mb-2">最佳联系时机：<span class="text-blue-400 font-semibold">${contact.bestTime}</span></p>
+                                    <p class="text-xs text-slate-400">基于历史数据分析，此时段对方回复率最高（92%）</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('translate-y-full'), 10);
+        }
+
+        function closeContactDetail() {
+            const modal = document.getElementById('contactDetailModal');
+            modal.classList.add('translate-y-full');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // ==================== 时空视图功能 ====================
+        function selectTime(element, period) {
+            document.querySelectorAll('.time-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            element.classList.add('active');
+            showToast(`切换到: ${element.textContent}`);
+        }
+
+        function showTimeFilter() {
+            showToast('时间筛选器');
+        }
+
+        function scheduleMeeting() {
+            showToast('打开预约界面');
+        }
+
+        function dismissPrediction() {
+            event.target.closest('.timeline-node').style.opacity = '0.5';
+            showToast('已忽略');
+        }
+
+        function addTimelineEvent() {
+            showToast('记录新事件');
+        }
+
+        // ==================== 个人中心功能 ====================
+        function toggleSetting(element, settingKey) {
+            element.classList.toggle('active');
+            settings[settingKey] = element.classList.contains('active');
+            
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+            
+            showToast(`${settingKey} 已${settings[settingKey] ? '开启' : '关闭'}`);
+        }
+
+        function editProfile() {
+            showToast('打开编辑资料');
+        }
+
+        function manageVip() {
+            showToast('管理会员订阅');
+        }
+
+        function cleanFootprint() {
+            showToast('正在清理数字足迹...');
+            setTimeout(() => {
+                showToast('已清理 30 天前记录');
+            }, 1500);
+        }
+
+        function editSOS() {
+            showToast('编辑紧急联系人');
+        }
+
+        function showSyncDetail() {
+            showToast('云端同步详情');
+        }
+
+        function showDataInsights() {
+            showToast('打开数据洞察报告');
+        }
+
+        function exportData() {
+            showToast('选择导出格式');
+        }
+
+        function manageGeofence() {
+            showToast('管理地理围栏');
+        }
+
+        function changeLanguage() {
+            showToast('选择语言');
+        }
+
+        function showHelp() {
+            showToast('打开帮助中心');
+        }
+
+        function showAbout() {
+            showToast('GeoContacts+ v2.0.1\n让每一次联系都更有温度');
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                showToast('已安全退出');
+            }
+        }
+
+        // ==================== SOS功能 ====================
+        function triggerSOS() {
+            document.getElementById('sosModal').classList.remove('hidden');
+        }
+
+        function cancelSOS() {
+            document.getElementById('sosModal').classList.add('hidden');
+            showToast('已取消紧急呼叫');
+        }
+
+        // ==================== 通用功能 ====================
+        function quickCall(phone) {
+            const div = document.createElement('div');
+            div.className = 'fixed inset-0 z-[70] bg-slate-900/95 flex flex-col items-center justify-center';
+            div.innerHTML = `
+                <div class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center mb-6 animate-pulse">
+                    <i class="fas fa-phone-alt text-3xl"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-2">正在拨打</h2>
+                <p class="text-slate-400 mb-8">${phone}</p>
+                <div class="flex gap-4">
+                    <button onclick="this.closest('.fixed').remove()" class="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center">
+                        <i class="fas fa-phone-slash"></i>
+                    </button>
+                    <button onclick="this.closest('.fixed').remove()" class="w-14 h-14 rounded-full bg-green-600 flex items-center justify-center">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        function navigateTo(name) {
+            showToast(`开始导航到: ${name}`);
+        }
+
+        function showContactQuickView(id) {
+            const contact = contacts.find(c => c.id === id);
+            if (!contact) return;
+            
+            const modal = document.getElementById('quickViewModal');
+            const content = document.getElementById('quickViewContent');
+            
+            content.innerHTML = `
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="${contact.avatar}" class="w-16 h-16 rounded-full">
+                    <div>
+                        <h3 class="font-bold text-lg">${contact.name}</h3>
+                        <p class="text-sm text-slate-400">${contact.location} · ${contact.distance}km</p>
+                        <p class="text-xs text-blue-400 mt-1">${contact.context}</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="quickCall('${contact.phone}'); closeQuickView()" class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-medium">
+                        <i class="fas fa-phone mr-2"></i>拨打
+                    </button>
+                    <button onclick="showContactDetail(contacts.find(c => c.id === ${contact.id})); closeQuickView()" class="flex-1 py-3 rounded-xl bg-slate-700 text-white font-medium">
+                        <i class="fas fa-info-circle mr-2"></i>详情
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeQuickView() {
+            document.getElementById('quickViewModal').classList.add('hidden');
+        }
+
+        function showAddContact() {
+            document.getElementById('addContactModal').classList.remove('hidden');
+        }
+
+        function closeAddContact() {
+            document.getElementById('addContactModal').classList.add('hidden');
+        }
+
+        function saveContact() {
+            closeAddContact();
+            showToast('联系人已保存');
+        }
+
+        function handleSearch(value) {
+            if (!value) {
+                renderMapContacts();
+                return;
+            }
+            
+            const filtered = contacts.filter(c => 
+                c.name.toLowerCase().includes(value.toLowerCase()) ||
+                c.location.toLowerCase().includes(value.toLowerCase())
+            );
+            
+            const container = document.getElementById('mapContactList');
+            container.innerHTML = '';
+            filtered.forEach(contact => {
+                container.appendChild(createContactCard(contact));
+            });
+        }
+
+        function showFilterModal() {
+            showToast('筛选功能');
+        }
+
+        function dismissTip() {
+            document.getElementById('smartTip').classList.add('hidden');
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.toast-message');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-message fixed bottom-32 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg z-[70] text-sm border border-slate-700 whitespace-pre-line';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, 20px)';
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s';
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 10);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('quickViewModal').addEventListener('click', function(e) {
+            if (e.target === this) closeQuickView();
+        });
+
+        document.getElementById('categoryManagerModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCategoryManager();
+        });
+    </script>
+</body>
+</html>
