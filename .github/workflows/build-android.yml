@@ -40,6 +40,11 @@ jobs:
           expo-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Configure EAS project
+        run: |
+          cd GeoContactsPro
+          npx eas-cli init --non-interactive
+
       - name: Build APK
         run: |
           cd GeoContactsPro
