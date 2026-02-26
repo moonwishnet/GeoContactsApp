@@ -1,0 +1,53 @@
+name: Build GeoContacts APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Install dependencies
+        run: |
+          cd GeoContactsPro
+          npm ci
+
+      - name: Install Expo CLI and EAS CLI
+        run: |
+          npm install -g expo-cli eas-cli
+
+      - name: Configure Expo
+        run: |
+          cd GeoContactsPro
+          npx expo install --fix -- --legacy-peer-deps
+          npx expo install react-native-web react-dom @expo/metro-runtime
+
+      - name: Login to Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK
+        run: |
+          cd GeoContactsPro
+          npx eas-cli build --platform android --profile preview --non-interactive
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: geocontacts-apk
+          path: '*.apk'
+          if-no-files-found: ignore
