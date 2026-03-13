@@ -25,14 +25,18 @@ import config from '../config';
 // 条件导入 MapView，Web 平台使用占位组件
 let MapView, Marker, Circle, AMapSdk;
 if (Platform.OS !== 'web') {
-  const AMap = require('react-native-amap3d');
-  MapView = AMap.MapView;
-  Marker = AMap.Marker;
-  Circle = AMap.Circle;
-  AMapSdk = AMap.AMapSdk;
-  
-  // 初始化高德地图 SDK
-  AMapSdk.init(config.amap.androidApiKey);
+  // 移动端使用 react-native-maps
+  const RNMaps = require('react-native-maps');
+  MapView = RNMaps.MapView;
+  Marker = RNMaps.Marker;
+  Circle = RNMaps.Circle;
+  AMapSdk = null; // react-native-maps 不需要 AMapSdk
+} else {
+  // Web 平台使用 WebMapComponent
+  MapView = WebMapComponent;
+  Marker = null; // Web 平台不需要单独的 Marker 组件
+  Circle = null; // Web 平台不需要单独的 Circle 组件
+  AMapSdk = null;
 }
 
 const { width, height } = Dimensions.get('window');
