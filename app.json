@@ -37,6 +37,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withReactSettingsPluginFix",
       [
         "expo-location",
         {
