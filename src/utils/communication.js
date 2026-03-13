@@ -1,4 +1,5 @@
 import { Linking, Platform } from 'react-native';
+import * as Location from 'expo-location';
 
 // 打电话功能
 export const makePhoneCall = async (phoneNumber) => {
@@ -159,11 +160,25 @@ export const shareLocation = async (latitude, longitude, name) => {
 // 触发SOS紧急呼叫
 export const triggerSOS = async (contacts) => {
   try {
+    // 获取当前位置
+    let locationText = '位置获取中...';
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        const { latitude, longitude } = location.coords;
+        locationText = `https://maps.google.com/?q=${latitude},${longitude}`;
+      }
+    } catch (e) {
+      console.warn('获取位置失败:', e);
+    }
+    
     // 发送位置给紧急联系人
     for (const contact of contacts) {
       if (contact.phone && contact.phone !== '110') {
-        await sendSMS(contact.phone, '【紧急求助】我遇到了紧急情况，请尽快联系我！我的位置：' + 
-          '(需要获取当前位置)');
+        await sendSMS(contact.phone, '【紧急求助】我遇到了紧急情况，请尽快联系我！我的位置：' + locationText);
       }
     }
     

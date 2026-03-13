@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,29 @@ import {
   Animated,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
+import * as Location from 'expo-location';
 import { useApp } from '../context/AppContext';
 import ContactCard from '../components/ContactCard';
+import WebMapComponent from '../components/WebMapComponent';
 import { makePhoneCall, navigateToLocation, triggerSOS } from '../utils/communication';
 import { formatLastContact } from '../utils/time';
+import config from '../config';
+
+// 条件导入 MapView，Web 平台使用占位组件
+let MapView, Marker, Circle, AMapSdk;
+if (Platform.OS !== 'web') {
+  const AMap = require('react-native-amap3d');
+  MapView = AMap.MapView;
+  Marker = AMap.Marker;
+  Circle = AMap.Circle;
+  AMapSdk = AMap.AMapSdk;
+  
+  // 初始化高德地图 SDK
+  AMapSdk.init(config.amap.androidApiKey);
+}
 
 const { width, height } = Dimensions.get('window');
 
@@ -35,7 +52,34 @@ const MapScreen = ({ navigation }) => {
   const [sosModalVisible, setSosModalVisible] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 39.9042,
+    longitude: 116.4074,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
   const pulseAnim = useState(new Animated.Value(1))[0];
+
+  // 获取用户当前位置
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const { latitude, longitude } = location.coords;
+        setUserLocation({ latitude, longitude });
+        setMapRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
+    })();
+  }, []);
 
   React.useEffect(() => {
     const pulse = Animated.loop(
@@ -43,12 +87,12 @@ const MapScreen = ({ navigation }) => {
         Animated.timing(pulseAnim, {
           toValue: 1.2,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
@@ -151,16 +195,20 @@ const MapScreen = ({ navigation }) => {
     />
   );
 
+  // Web 平台地图组件
+  const renderWebMap = () => (
+    <WebMapComponent
+      mapRegion={mapRegion}
+      setMapRegion={setMapRegion}
+      userLocation={userLocation}
+      filteredContacts={filteredContacts}
+      openContactModal={openContactModal}
+    />
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.mapPlaceholder}>
-        <Icon name="users" size={48} color="#3b82f6" />
-        <Text style={styles.mapPlaceholderText}>GeoContacts+</Text>
-        <Text style={styles.mapPlaceholderSub}>
-          {filteredContacts.length} 位联系人
-        </Text>
-      </View>
-
+      {/* 搜索框 */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Icon name="search" size={16} color="#64748b" />
@@ -179,6 +227,7 @@ const MapScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* 标签栏 */}
       <View style={styles.tabContainer}>
         <View style={styles.tabBar}>
           {TABS.map(tab => (
@@ -201,7 +250,8 @@ const MapScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {(activeTab === 'work' || activeTab === 'personal') && categoriesWithContacts.length > 0 && (
+      {/* 分类筛选 - 仅在 Web 平台显示 */}
+      {(activeTab === 'work' || activeTab === 'personal') && categoriesWithContacts.length > 0 && Platform.OS === 'web' && (
         <View style={styles.categoryScrollContainer}>
           <ScrollView
             horizontal
@@ -239,6 +289,88 @@ const MapScreen = ({ navigation }) => {
         </View>
       )}
 
+      {/* 地图区域 - 固定高度 */}
+      <View style={styles.mapContainer}>
+        {Platform.OS === 'web' ? renderWebMap() : (
+          <MapView
+            style={styles.map}
+            zoomLevel={15}
+            center={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }}
+            onMapMoveEnd={(e) => {
+              setMapRegion({
+                latitude: e.latitude,
+                longitude: e.longitude,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              });
+            }}
+            showsUserLocation={true}
+            showsLocationButton={false}
+            showsCompass={true}
+          >
+            {/* 用户位置圆圈 */}
+            {userLocation && (
+              <Circle
+                center={userLocation}
+                radius={500}
+                fillColor="rgba(59, 130, 246, 0.1)"
+                strokeColor="rgba(59, 130, 246, 0.3)"
+                strokeWidth={2}
+              />
+            )}
+            
+            {/* 联系人标记 */}
+            {filteredContacts.map((contact) => (
+              contact.latitude && contact.longitude && (
+                <Marker
+                  key={contact.id}
+                  position={{ latitude: contact.latitude, longitude: contact.longitude }}
+                  title={contact.name}
+                  description={contact.location}
+                  onPress={() => openContactModal(contact)}
+                >
+                  <View style={styles.markerContainer}>
+                    <View style={[
+                      styles.marker,
+                      { backgroundColor: contact.isFavorite ? '#fbbf24' : '#3b82f6' }
+                    ]}>
+                      <Text style={styles.markerText}>{contact.name[0]}</Text>
+                    </View>
+                    <View style={styles.markerTriangle} />
+                  </View>
+                </Marker>
+              )
+            ))}
+          </MapView>
+        )}
+        
+        {/* 地图控制按钮 - 仅在非 Web 平台显示 */}
+        {Platform.OS !== 'web' && (
+          <TouchableOpacity 
+            style={styles.locationButton}
+            onPress={() => {
+              if (userLocation) {
+                setMapRegion({
+                  ...userLocation,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                });
+              }
+            }}
+          >
+            <Icon name="crosshairs" size={20} color="#3b82f6" />
+          </TouchableOpacity>
+        )}
+        
+        {/* 联系人数量指示器 - 仅在非 Web 平台显示 */}
+        {Platform.OS !== 'web' && (
+          <View style={styles.mapOverlay}>
+            <Text style={styles.mapOverlayText}>{filteredContacts.length} 位联系人</Text>
+          </View>
+        )}
+      </View>
+
+      {/* 联系人列表 */}
       <View style={styles.contactListContainer}>
         <View style={styles.contactListHeader}>
           <Text style={styles.contactListTitle}>
@@ -255,6 +387,7 @@ const MapScreen = ({ navigation }) => {
         />
       </View>
 
+      {/* SOS 按钮 */}
       <TouchableOpacity
         style={styles.sosButton}
         onPress={() => setSosModalVisible(true)}
@@ -268,6 +401,7 @@ const MapScreen = ({ navigation }) => {
         </View>
       </TouchableOpacity>
 
+      {/* 添加按钮 */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('AddContact')}
@@ -275,6 +409,7 @@ const MapScreen = ({ navigation }) => {
         <Icon name="plus" size={24} color="#fff" />
       </TouchableOpacity>
 
+      {/* SOS 弹窗 */}
       <Modal
         visible={sosModalVisible}
         transparent
@@ -316,6 +451,7 @@ const MapScreen = ({ navigation }) => {
         </View>
       </Modal>
 
+      {/* 联系人详情弹窗 */}
       <Modal
         visible={contactModalVisible}
         transparent
@@ -350,7 +486,7 @@ const MapScreen = ({ navigation }) => {
                       {selectedContact.location}
                       {selectedContact.distance !== null && (
                         <Text style={styles.contactModalDistance}>
-                          {' '}({selectedContact.distance.toFixed(1)}km
+                          {' '}({selectedContact.distance.toFixed(1)}km)
                         </Text>
                       )}
                     </Text>
@@ -412,29 +548,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f172a',
   },
-  mapPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1e293b',
-  },
-  mapPlaceholderText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 16,
-  },
-  mapPlaceholderSub: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 8,
-  },
+  // 搜索框样式
   searchContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    right: 16,
-    zIndex: 10,
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 12,
+    backgroundColor: '#0f172a',
   },
   searchBar: {
     flexDirection: 'row',
@@ -449,15 +568,14 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 14,
+    fontSize: 16,
     color: '#fff',
   },
+  // 标签栏样式
   tabContainer: {
-    position: 'absolute',
-    top: 110,
-    left: 16,
-    right: 16,
-    zIndex: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: '#0f172a',
   },
   tabBar: {
     flexDirection: 'row',
@@ -469,7 +587,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
     borderRadius: 8,
   },
@@ -477,7 +595,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#94a3b8',
     fontWeight: '500',
   },
@@ -485,22 +603,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  // 分类筛选样式
   categoryScrollContainer: {
-    position: 'absolute',
-    top: 165,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: '#0f172a',
   },
   categoryScroll: {
-    paddingHorizontal: 16,
+    paddingRight: 16,
     gap: 8,
   },
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: 'rgba(30, 41, 59, 0.95)',
-    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     marginRight: 8,
@@ -517,13 +634,94 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-  contactListContainer: {
+  // 地图容器样式 - 固定高度
+  mapContainer: {
+    height: 300,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  map: {
+    flex: 1,
+  },
+  markerContainer: {
+    alignItems: 'center',
+  },
+  marker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#3b82f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  markerText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  markerTriangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#3b82f6',
+    marginTop: -2,
+  },
+  locationButton: {
     position: 'absolute',
-    bottom: 80,
-    left: 16,
-    right: 16,
-    maxHeight: height * 0.35,
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    right: 12,
+    bottom: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(30, 41, 59, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  mapOverlay: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  mapOverlayText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  // 联系人列表样式
+  contactListContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -536,26 +734,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   contactListTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#fff',
   },
   contactListCount: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
   },
   contactList: {
     padding: 12,
   },
+  // SOS 按钮样式
   sosButton: {
     position: 'absolute',
-    bottom: 420,
     right: 16,
+    bottom: 100,
     width: 56,
     height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -579,22 +779,24 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  // 添加按钮样式
   addButton: {
     position: 'absolute',
-    bottom: 350,
     right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    bottom: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#3b82f6',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 5,
   },
+  // 弹窗样式
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -607,9 +809,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 400,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   sosModalHeader: {
     alignItems: 'center',
@@ -625,7 +827,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94a3b8',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sosModalContacts: {
     marginBottom: 20,
@@ -633,16 +835,18 @@ const styles = StyleSheet.create({
   sosContactItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   sosContactName: {
     fontSize: 14,
     color: '#fff',
+    fontWeight: '500',
   },
   sosContactPhone: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
   },
   sosModalButtons: {
@@ -651,23 +855,25 @@ const styles = StyleSheet.create({
   },
   sosCancelButton: {
     flex: 1,
-    paddingVertical: 14,
-    backgroundColor: '#334155',
+    paddingVertical: 12,
     borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
   },
   sosCancelText: {
+    fontSize: 16,
     color: '#94a3b8',
     fontWeight: '600',
   },
   sosConfirmButton: {
     flex: 1,
-    paddingVertical: 14,
-    backgroundColor: '#ef4444',
+    paddingVertical: 12,
     borderRadius: 12,
+    backgroundColor: '#ef4444',
     alignItems: 'center',
   },
   sosConfirmText: {
+    fontSize: 16,
     color: '#fff',
     fontWeight: '600',
   },
@@ -676,7 +882,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 400,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
@@ -685,16 +891,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   contactModalAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#3b82f6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   contactModalAvatarText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -712,14 +918,14 @@ const styles = StyleSheet.create({
   contactModalTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
     justifyContent: 'center',
+    gap: 8,
   },
   contactModalTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderRadius: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
   },
   contactModalTagText: {
     fontSize: 12,
@@ -727,21 +933,22 @@ const styles = StyleSheet.create({
   },
   contactModalInfo: {
     marginBottom: 20,
-    gap: 12,
   },
   contactModalInfoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   contactModalInfoText: {
     fontSize: 14,
-    color: '#cbd5e1',
+    color: '#94a3b8',
+    marginLeft: 12,
     flex: 1,
   },
   contactModalDistance: {
-    color: '#10b981',
-    fontWeight: '500',
+    color: '#3b82f6',
   },
   contactModalActions: {
     flexDirection: 'row',
@@ -753,9 +960,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 12,
+    gap: 8,
   },
   callAction: {
     backgroundColor: '#10b981',
@@ -764,17 +971,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
   },
   contactModalActionText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#fff',
   },
   contactModalClose: {
-    paddingVertical: 14,
-    backgroundColor: '#334155',
+    paddingVertical: 12,
     borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
   },
   contactModalCloseText: {
+    fontSize: 16,
     color: '#94a3b8',
     fontWeight: '600',
   },

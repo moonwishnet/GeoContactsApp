@@ -6,6 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Platform,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { useApp } from '../context/AppContext';
@@ -14,7 +16,7 @@ import { formatLastContact, formatDateTime } from '../utils/time';
 
 const ContactDetailScreen = ({ route, navigation }) => {
   const { contact } = route.params;
-  const { defaultNavigation, updateContactLastContact } = useApp();
+  const { defaultNavigation, updateContactLastContact, deleteContact } = useApp();
 
   const statusColor = {
     online: '#10b981',
@@ -59,13 +61,27 @@ const ContactDetailScreen = ({ route, navigation }) => {
   };
 
   // 处理分享位置
-  const handleShareLocation = () => {
-    Alert.alert('分享位置', '位置分享功能开发中');
+  const handleShareLocation = async () => {
+    try {
+      const message = `我在 ${contact.location}，位置：${contact.latitude},${contact.longitude}`;
+      const url = Platform.select({
+        ios: `sms:${contact.phone}&body=${encodeURIComponent(message)}`,
+        android: `sms:${contact.phone}?body=${encodeURIComponent(message)}`,
+      });
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('错误', '无法打开短信应用');
+      }
+    } catch (error) {
+      Alert.alert('错误', '分享位置失败');
+    }
   };
 
   // 处理编辑联系人
   const handleEdit = () => {
-    Alert.alert('编辑联系人', '编辑功能开发中');
+    navigation.navigate('EditContact', { contact });
   };
 
   // 处理删除联系人
@@ -79,7 +95,10 @@ const ContactDetailScreen = ({ route, navigation }) => {
           text: '删除',
           style: 'destructive',
           onPress: () => {
-            Alert.alert('提示', '删除功能开发中');
+            deleteContact(contact.id);
+            Alert.alert('已删除', '联系人已删除', [
+              { text: '确定', onPress: () => navigation.navigate('Main') },
+            ]);
           },
         },
       ]

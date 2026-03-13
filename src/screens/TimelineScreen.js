@@ -6,10 +6,27 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Alert,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { useApp } from '../context/AppContext';
 import { formatDateTime } from '../utils/time';
+
+// 平台特定的 Notifications 导入
+let Notifications = null;
+try {
+  if (Platform.OS !== 'web') {
+    Notifications = require('expo-notifications');
+  }
+} catch (e) {
+  // Web 平台或导入失败时使用空实现
+  Notifications = {
+    getPermissionsAsync: async () => ({ status: 'undetermined' }),
+    requestPermissionsAsync: async () => ({ status: 'undetermined' }),
+    scheduleNotificationAsync: async () => {},
+  };
+}
 
 const { width } = Dimensions.get('window');
 
@@ -90,6 +107,66 @@ const TimelineScreen = () => {
   const { contacts } = useApp();
   const [activeTab, setActiveTab] = useState('timeline');
   const [selectedFilter, setSelectedFilter] = useState('all');
+
+  // 设置预测提醒
+  const schedulePredictionReminder = async (prediction) => {
+    try {
+      if (Platform.OS === 'web') {
+        Alert.alert('提示', 'Web 平台不支持通知功能');
+        return;
+      }
+      
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('需要权限', '请先开启通知权限');
+        return;
+      }
+
+      // 解析建议时间
+      const now = new Date();
+      let triggerDate = new Date();
+      
+      if (prediction.suggestedTime.includes('今天')) {
+        const timeMatch = prediction.suggestedTime.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          triggerDate.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), 0);
+        }
+      } else if (prediction.suggestedTime.includes('明天')) {
+        triggerDate.setDate(triggerDate.getDate() + 1);
+        const timeMatch = prediction.suggestedTime.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          triggerDate.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), 0);
+        }
+      } else if (prediction.suggestedTime.includes('周六') || prediction.suggestedTime.includes('周日')) {
+        // 找到下一个周末
+        const day = triggerDate.getDay();
+        const daysUntilWeekend = day === 6 ? 0 : 6 - day;
+        triggerDate.setDate(triggerDate.getDate() + daysUntilWeekend);
+        const timeMatch = prediction.suggestedTime.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) {
+          triggerDate.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), 0);
+        }
+      }
+
+      // 如果触发时间已过，设置为明天同一时间
+      if (triggerDate <= now) {
+        triggerDate.setDate(triggerDate.getDate() + 1);
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `📞 联系提醒：${prediction.contactName}`,
+          body: `AI预测建议：${prediction.reason}`,
+          data: { type: 'prediction', contactName: prediction.contactName },
+        },
+        trigger: { date: triggerDate },
+      });
+
+      Alert.alert('提醒已设置', `将在 ${triggerDate.toLocaleString('zh-CN')} 提醒您联系 ${prediction.contactName}`);
+    } catch (error) {
+      Alert.alert('错误', '设置提醒失败：' + error.message);
+    }
+  };
 
   const timelineEvents = useMemo(() => generateTimelineData(contacts), [contacts]);
   const heatmapData = useMemo(() => generateHeatmapData(), []);
@@ -310,7 +387,10 @@ const TimelineScreen = () => {
               <Text style={styles.predictionTimeText}>建议时间: {prediction.suggestedTime}</Text>
             </View>
 
-            <TouchableOpacity style={styles.predictionAction}>
+            <TouchableOpacity 
+              style={styles.predictionAction}
+              onPress={() => schedulePredictionReminder(prediction)}
+            >
               <Text style={styles.predictionActionText}>设置提醒</Text>
             </TouchableOpacity>
           </View>
