@@ -6,8 +6,8 @@ const config = {
   amap: {
     // Web 端 API Key
     webApiKey: '1f790cfcda42b1073281745e3fc7f835',
-    // 移动端 API Key (Android)
-    androidApiKey: '1f790cfcda42b1073281745e3fc7f835',
+    // 移动端 API Key (Android) - 使用新申请的 Key
+    androidApiKey: '763bc6dc907574cf71660951b9dee45e',
     // 移动端 API Key (iOS)
     iosApiKey: '1f790cfcda42b1073281745e3fc7f835',
     // 密钥（用于 Web 服务 API）
