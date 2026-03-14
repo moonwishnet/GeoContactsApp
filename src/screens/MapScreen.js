@@ -24,18 +24,17 @@ import config from '../config';
 
 // 条件导入 MapView，Web 平台使用占位组件
 let MapView, Marker, Circle, AMapSdk;
-if (Platform.OS !== 'web') {
-  // 移动端使用 react-native-maps
-  const RNMaps = require('react-native-maps');
-  MapView = RNMaps.MapView;
-  Marker = RNMaps.Marker;
-  Circle = RNMaps.Circle;
-  AMapSdk = null; // react-native-maps 不需要 AMapSdk
-} else {
+if (Platform.OS === 'web') {
   // Web 平台使用 WebMapComponent
   MapView = WebMapComponent;
   Marker = null; // Web 平台不需要单独的 Marker 组件
   Circle = null; // Web 平台不需要单独的 Circle 组件
+  AMapSdk = null;
+} else {
+  // 移动端暂时使用简单的视图
+  MapView = View;
+  Marker = View;
+  Circle = View;
   AMapSdk = null;
 }
 
@@ -296,56 +295,12 @@ const MapScreen = ({ navigation }) => {
       {/* 地图区域 - 固定高度 */}
       <View style={styles.mapContainer}>
         {Platform.OS === 'web' ? renderWebMap() : (
-          <MapView
-            style={styles.map}
-            zoomLevel={15}
-            center={{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }}
-            onMapMoveEnd={(e) => {
-              setMapRegion({
-                latitude: e.latitude,
-                longitude: e.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              });
-            }}
-            showsUserLocation={true}
-            showsLocationButton={false}
-            showsCompass={true}
-          >
-            {/* 用户位置圆圈 */}
-            {userLocation && (
-              <Circle
-                center={userLocation}
-                radius={500}
-                fillColor="rgba(59, 130, 246, 0.1)"
-                strokeColor="rgba(59, 130, 246, 0.3)"
-                strokeWidth={2}
-              />
-            )}
-            
-            {/* 联系人标记 */}
-            {filteredContacts.map((contact) => (
-              contact.latitude && contact.longitude && (
-                <Marker
-                  key={contact.id}
-                  position={{ latitude: contact.latitude, longitude: contact.longitude }}
-                  title={contact.name}
-                  description={contact.location}
-                  onPress={() => openContactModal(contact)}
-                >
-                  <View style={styles.markerContainer}>
-                    <View style={[
-                      styles.marker,
-                      { backgroundColor: contact.isFavorite ? '#fbbf24' : '#3b82f6' }
-                    ]}>
-                      <Text style={styles.markerText}>{contact.name[0]}</Text>
-                    </View>
-                    <View style={styles.markerTriangle} />
-                  </View>
-                </Marker>
-              )
-            ))}
-          </MapView>
+          <View style={styles.map}>
+            <View style={styles.mobileMapPlaceholder}>
+              <Icon name="map-marked-alt" size={48} color="#64748b" />
+              <Text style={styles.mobileMapText}>地图功能开发中</Text>
+            </View>
+          </View>
         )}
         
         {/* 地图控制按钮 - 仅在非 Web 平台显示 */}
@@ -650,6 +605,17 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  mobileMapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1e293b',
+  },
+  mobileMapText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748b',
   },
   markerContainer: {
     alignItems: 'center',
