@@ -69,8 +69,8 @@ jobs:
             }
           }
 
-          // 使用 Expo 自动链接
-          apply from: new File(rootDir, "node_modules/expo-react-native-adapter/gradle.adapter.js")
+          // 基本配置，不使用 Expo 自动链接
+          // Expo 自动链接会在 prebuild 过程中自动配置
 
           include ':app'
           def gradlePluginPath = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()
