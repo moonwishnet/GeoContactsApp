@@ -30,6 +30,11 @@ jobs:
       - name: Prebuild for Android
         run: npx expo prebuild --platform android --no-install
 
+      - name: Fix settings.gradle for React Native 0.83.2
+        run: |
+          # Fix settings.gradle for React Native 0.83.2 compatibility
+          sed -i 's/if (getRNMinorVersion() >= 75) {\n  extensions.configure(com.facebook.react.ReactSettingsExtension) {\n    if (System.getenv(\'EXPO_UNSTABLE_CORE_AUTOLINKING\') == \'1\') {\n      println(\'\\u001B[32mUsing expo-modules-autolinking as core autolinking source\\u001B[0m\')\n      def command = [\n        \'node\',\n        \'--no-warnings\',\n        \'--eval\',\n        \'require(require.resolve(\\\'expo-modules-autolinking\\\', { paths: [require.resolve(\\\'expo/package.json\\\')] }))(process.argv.slice(1))\',\n        \'react-native-config\',\n        \'--json\',\n        \'--platform\',\n        \'android\'\n      ].toList()\n      ex.autolinkLibrariesFromCommand(command)\n    } else {\n      ex.autolinkLibrariesFromCommand()\n    }\n  }\n}/if (getRNMinorVersion() >= 75) {\n  try {\n    extensions.configure(com.facebook.react.ReactSettingsExtension) {\n      ex.autolinkLibrariesFromCommand()\n    }\n  } catch (e) {\n    println(\'\\u001B[33mWarning: Failed to configure ReactSettingsExtension: \' + e.message + \'\\u001B[0m\')\n  }\n}/' android/settings.gradle
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
