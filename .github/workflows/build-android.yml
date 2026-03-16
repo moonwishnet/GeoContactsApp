@@ -30,7 +30,7 @@ jobs:
       - name: Prebuild for Android
         run: npx expo prebuild --platform android --no-install
 
-      - name: Fix settings.gradle for React Native 0.83.2
+      - name: Fix Android build files for React Native 0.83.2
         run: |
           # Fix settings.gradle for React Native 0.83.2 compatibility
           cat > android/settings.gradle << 'EOF'
@@ -48,33 +48,51 @@ jobs:
 
           plugins { id("com.facebook.react.settings") }
 
-          def getRNMinorVersion() {
-            def version = providers.exec {
-              commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
-            }.standardOutput.asText.get().trim()
-
-            def coreVersion = version.split("-")[0]
-            def (major, minor, patch) = coreVersion.tokenize('.').collect { it.toInteger() }
-
-            return minor
-          }
-
           rootProject.name = 'GeoContacts+'
-
-          dependencyResolutionManagement {
-            versionCatalogs {
-              reactAndroidLibs {
-                from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
-              }
-            }
-          }
-
-          // 基本配置，不使用 Expo 自动链接
-          // Expo 自动链接会在 prebuild 过程中自动配置
 
           include ':app'
           def gradlePluginPath = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()
           includeBuild(new File(gradlePluginPath).getParentFile())
+          EOF
+
+          # Fix build.gradle for React Native 0.83.2 compatibility
+          cat > android/build.gradle << 'EOF'
+          // Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+          buildscript {
+              ext {
+                  buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+                  minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
+                  compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+                  targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+                  kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
+
+                  ndkVersion = "26.1.10909125"
+              }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath('com.android.tools.build:gradle')
+                  classpath('com.facebook.react:react-native-gradle-plugin')
+                  classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+              }
+          }
+
+          apply plugin: "com.facebook.react.rootproject"
+
+          allprojects {
+              repositories {
+                  maven {
+                      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+                      url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
+                  }
+                  google()
+                  mavenCentral()
+                  maven { url 'https://www.jitpack.io' }
+              }
+          }
           EOF
 
       - name: Setup Java 17
