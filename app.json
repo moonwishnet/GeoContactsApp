@@ -48,7 +48,8 @@
         {
           "contactsPermission": "允许 GeoContacts+ 访问您的联系人"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "eas": {
