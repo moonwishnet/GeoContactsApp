@@ -95,6 +95,66 @@ jobs:
           }
           EOF
 
+          # Fix app/build.gradle for React Native 0.83.2 compatibility
+          cat > android/app/build.gradle << 'EOF'
+          apply plugin: "com.android.application"
+          apply plugin: "com.facebook.react"
+
+          import com.android.build.OutputFile
+
+          project.ext.react = [
+              entryFile: "index.js",
+              enableHermes: false,
+              bundleInDebug: false,
+              bundleInRelease: true,
+              bundleInAlpha: false,
+              bundleInBeta: false,
+          ]
+
+          def reactNativeVersion = new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim())
+          def reactNativeAndroidRoot = new File(reactNativeVersion.parentFile, 'android')
+
+          android {
+              compileSdkVersion rootProject.ext.compileSdkVersion
+              buildToolsVersion rootProject.ext.buildToolsVersion
+
+              defaultConfig {
+                  applicationId "com.geocontacts.plus"
+                  minSdkVersion rootProject.ext.minSdkVersion
+                  targetSdkVersion rootProject.ext.targetSdkVersion
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+                  }
+              }
+
+              splits {
+                  abi {
+                      reset()
+                      enable true
+                      universalApk true
+                  }
+              }
+          }
+
+          dependencies {
+              implementation fileTree(dir: "libs", include: ["*.jar"])
+              implementation "com.facebook.react:react-native:"
+              implementation "androidx.appcompat:appcompat:1.4.1"
+              implementation "com.google.android.material:material:1.5.0"
+          }
+
+          task copyDownloadableDepsToLibs(type: Copy) {
+              from configurations.compileOnly
+              into 'libs'
+          }
+          EOF
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
