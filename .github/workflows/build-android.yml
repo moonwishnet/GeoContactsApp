@@ -59,16 +59,6 @@ jobs:
             return minor
           }
 
-          if (getRNMinorVersion() >= 75) {
-            try {
-              extensions.configure(com.facebook.react.ReactSettingsExtension) {
-                ex.autolinkLibrariesFromCommand()
-              }
-            } catch (e) {
-              println('\u001B[33mWarning: Failed to configure ReactSettingsExtension: ' + e.message + '\u001B[0m')
-            }
-          }
-
           rootProject.name = 'GeoContacts+'
 
           dependencyResolutionManagement {
@@ -79,9 +69,8 @@ jobs:
             }
           }
 
-          def expoPath = ["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim()
-          apply from: new File(expoPath, "../scripts/autolinking.gradle")
-          useExpoModules()
+          // 使用 Expo 自动链接
+          apply from: new File(rootDir, "node_modules/expo-react-native-adapter/gradle.adapter.js")
 
           include ':app'
           def gradlePluginPath = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()
