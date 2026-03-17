@@ -18,27 +18,20 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN_YONGXINGNEWS }}
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
-      - name: Fix Expo dependencies
-        run: npx expo install --fix --  --legacy-peer-deps
+      - name: Build with EAS
+        run: npx eas build --platform android --profile preview --no-wait
 
-      - name: Prebuild for Android
-        run: npx expo prebuild --platform android
-
-      - name: Build Android APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleRelease
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
+      - name: Wait for build and download APK
+        run: |
+          echo "Waiting for EAS Build to complete..."
+          echo "Please visit the EAS Build dashboard to download the APK:"
+          echo "https://expo.dev/accounts/moonwishnet/projects/geocontacts-plus/builds"
