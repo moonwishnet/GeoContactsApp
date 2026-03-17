@@ -32,6 +32,8 @@ jobs:
 
       - name: Build with EAS
         run: eas build --platform android --profile preview --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_YONGXINGNEWS }}
 
       - name: Wait for build and download APK
         run: |
