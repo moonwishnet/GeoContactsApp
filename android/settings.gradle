@@ -40,5 +40,9 @@ if (getRNMinorVersion() < 75) {
 // The autolinkLibrariesFromCommand() method is not supported in React Native 0.83
 // Instead, we disable autolinking by not applying the native_modules.gradle script
 
+// Disable autolinking by setting the autolinkNativeModules property to false
+// This prevents the Gradle plugin from calling `react-native config`
+project.ext.set("react.autolinkNativeModules", false)
+
 include ':app'
 includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
