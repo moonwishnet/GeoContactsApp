@@ -51,11 +51,6 @@
       ],
       "expo-sharing"
     ],
-    "extra": {
-      "eas": {
-        "projectId": "79c68c4e-1804-4975-b0e0-00d885f0ad7d"
-      }
-    },
     "owner": "yongxingnews"
   }
 }
