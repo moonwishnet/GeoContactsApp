@@ -50,11 +50,6 @@
         }
       ],
       "expo-sharing"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "f316ad96-451b-4e18-8912-c64442eb0862"
-      }
-    }
+    ]
   }
 }
