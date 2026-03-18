@@ -80,14 +80,7 @@ react {
     // hermesFlags = ["-O", "-output-source-map"]
 
     /* Autolinking */
-    // Disable autolinking to avoid autolinking.json issues
-    // This prevents the Gradle plugin from calling autolinkLibrariesWithApp()
-    // Reference: https://github.com/react-native-community/cli/blob/main/docs/autolinking.md#disabling-autolinking
-    if (rnVersion >= versionToNumber(0, 75, 0)) {
-        // For React Native 0.75+, we need to override the autolinkLibrariesWithApp method
-        // See: https://github.com/react-native-community/cli/blob/main/docs/autolinking.md#disable-autolinking
-        // autolinkLibrariesWithApp = { -> }
-    }
+    // React Native Gradle Plugin will call autolinkLibrariesWithApp() automatically
 }
 
 /**
