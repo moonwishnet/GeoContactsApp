@@ -80,8 +80,7 @@ react {
     // hermesFlags = ["-O", "-output-source-map"]
 
     /* Autolinking */
-    // Disable autolinking to avoid autolinking.json issues
-    autolinkLibrariesWithApp = { -> }
+    // React Native Gradle Plugin will call autolinkLibrariesWithApp() automatically
 }
 
 /**
