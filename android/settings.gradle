@@ -30,6 +30,11 @@ dependencyResolutionManagement {
   }
 }
 
+if (getRNMinorVersion() < 75) {
+  apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
+  applyNativeModulesSettingsGradle(settings)
+}
+
 // Disable autolinking for React Native 0.75+
 // See: https://github.com/react-native-community/cli/blob/main/docs/autolinking.md#disable-autolinking
 // The autolinkLibrariesFromCommand() method is not supported in React Native 0.83
@@ -38,13 +43,13 @@ dependencyResolutionManagement {
 // Disable autolinking by setting the autolinkNativeModules property to false
 // This prevents the Gradle plugin from calling `react-native config`
 // Reference: https://github.com/react-native-community/cli/blob/main/docs/autolinking.md#disabling-autolinking
-gradle.projectsLoaded {
-    gradle.rootProject {
-        ext.react = [
-            autolinkNativeModules: false
-        ]
-    }
-}
+// gradle.projectsLoaded {
+//     gradle.rootProject {
+//         ext.react = [
+//             autolinkNativeModules: false
+//         ]
+//     }
+// }
 
 include ':app'
-includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile())
+includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
