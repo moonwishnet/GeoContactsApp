@@ -30,6 +30,63 @@ jobs:
       - name: Prebuild for Android
         run: npx expo prebuild --platform android --no-install
 
+      - name: Fix Android build files
+        run: |
+          # Fix settings.gradle - remove the problematic node command
+          cat > android/settings.gradle << 'EOF'
+          rootProject.name = 'GeoContacts+'
+          include ':app'
+          EOF
+
+          # Fix app/build.gradle - use minimal working configuration
+          cat > android/app/build.gradle << 'EOF'
+          apply plugin: "com.android.application"
+
+          android {
+              compileSdkVersion 34
+              buildToolsVersion "34.0.0"
+
+              defaultConfig {
+                  applicationId "com.geocontacts.plus"
+                  minSdkVersion 23
+                  targetSdkVersion 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+          }
+
+          dependencies {
+              implementation "com.facebook.react:react-native:+"
+          }
+          EOF
+
+          # Fix build.gradle - minimal configuration
+          cat > android/build.gradle << 'EOF'
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath("com.android.tools.build:gradle:8.1.0")
+              }
+          }
+
+          allprojects {
+              repositories {
+                  maven { url "$rootDir/../node_modules/react-native/android" }
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+
       - name: Build Android APK
         run: |
           cd android
